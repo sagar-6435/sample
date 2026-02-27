@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Camera } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -10,7 +12,16 @@ export default function MedicineDetection({ navigation }) {
   const [detectionResult, setDetectionResult] = useState(null);
   const [patientAge, setPatientAge] = useState('28');
   const [scanProgress, setScanProgress] = useState(0);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [flashMode, setFlashMode] = useState(false);
   const scanLineAnim = useState(new Animated.Value(0))[0];
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+  }, []);
 
   useEffect(() => {
     if (isScanning) {
@@ -97,30 +108,56 @@ export default function MedicineDetection({ navigation }) {
     }, 2000);
   };
 
-  const handleImagePick = () => {
-    Alert.alert(
-      'Scan Medicine',
-      'Choose how to scan the medicine',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Take Photo', 
-          onPress: () => {
-            Alert.alert('Camera', 'Opening camera...', [{ text: 'OK', onPress: handleScan }]);
-          }
-        },
-        { 
-          text: 'Choose from Gallery', 
-          onPress: () => {
-            Alert.alert('Gallery', 'Opening gallery...', [{ text: 'OK', onPress: handleScan }]);
-          }
-        },
-      ]
-    );
+  const handleImagePick = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant gallery access to select images');
+        return;
+      }
+
+      Alert.alert(
+        'Scan Medicine',
+        'Choose how to scan the medicine',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Take Photo', 
+            onPress: async () => {
+              if (hasPermission === false) {
+                Alert.alert('Permission Required', 'Camera access is required to take photos');
+                return;
+              }
+              // Simulate taking photo and scanning
+              Alert.alert('Camera', 'Taking photo...', [{ text: 'OK', onPress: handleScan }]);
+            }
+          },
+          { 
+            text: 'Choose from Gallery', 
+            onPress: async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 1,
+              });
+
+              if (!result.canceled) {
+                Alert.alert('Processing', 'Analyzing image...', [{ text: 'OK', onPress: handleScan }]);
+              }
+            }
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to access gallery');
+    }
   };
 
   const handleFlashToggle = () => {
-    Alert.alert('Flash', 'Flash feature will be available with camera access');
+    setFlashMode(!flashMode);
+    Alert.alert('Flash', flashMode ? 'Flash turned off' : 'Flash turned on');
   };
 
   const scanLineTranslateY = scanLineAnim.interpolate({
@@ -249,7 +286,11 @@ export default function MedicineDetection({ navigation }) {
           </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlBtn} onPress={handleFlashToggle}>
-          <MaterialCommunityIcons name="flash" size={24} color="#cbd5e1" />
+          <MaterialCommunityIcons 
+            name={flashMode ? "flash" : "flash-off"} 
+            size={24} 
+            color={flashMode ? "#fbbf24" : "#cbd5e1"} 
+          />
         </TouchableOpacity>
       </View>
 
