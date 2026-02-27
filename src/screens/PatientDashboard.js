@@ -1132,7 +1132,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   doctorsList: {
-    marginLeft: 24,
+    marginLeft: 0,
   },
   doctorCardWrapper: {
     position: 'relative',
