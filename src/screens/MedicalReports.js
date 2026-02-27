@@ -67,7 +67,7 @@ export default function MedicalReports({ navigation }) {
         {reports.map((report) => (
           <View key={report.id} style={styles.reportCard}>
             <View style={[styles.reportIcon, { backgroundColor: `${report.color}15` }]}>
-              <MaterialCommunityIcons name={report.icon} size={20} color={report.color} />
+              <MaterialCommunityIcons name={report.icon} size={18} color={report.color} />
             </View>
             <View style={styles.reportInfo}>
               <Text style={styles.reportTitle}>{report.title}</Text>
@@ -260,37 +260,37 @@ const styles = StyleSheet.create({
   reportCard: {
     flexDirection: 'row',
     backgroundColor: 'rgba(30,41,59,0.4)',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 10,
-    gap: 12,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 8,
+    gap: 10,
     borderWidth: 1,
     borderColor: '#334155',
   },
   reportIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   reportInfo: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   reportTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#fff',
   },
   reportFacility: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '500',
     color: '#94a3b8',
     letterSpacing: 0.3,
   },
   reportMeta: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
   },
   reportActions: {

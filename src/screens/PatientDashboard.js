@@ -552,7 +552,7 @@ const PatientDashboard = ({ navigation }) => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Available Doctors</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate('AllDoctors')}
+              onPress={() => navigation.navigate('DoctorPatients')}
               accessibilityLabel="View all doctors"
               accessibilityRole="button"
             >
@@ -1031,7 +1031,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   section: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     marginBottom: 16,
   },
   sectionHeader: {

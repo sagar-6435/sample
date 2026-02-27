@@ -1,11 +1,132 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Alert, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function MedicineDetection({ navigation }) {
+  const [isScanning, setIsScanning] = useState(false);
+  const [detectionResult, setDetectionResult] = useState(null);
+  const [patientAge, setPatientAge] = useState('28');
+  const [scanProgress, setScanProgress] = useState(0);
+  const scanLineAnim = useState(new Animated.Value(0))[0];
+
+  useEffect(() => {
+    if (isScanning) {
+      // Animate scan line
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scanLineAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scanLineAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+
+      // Simulate progress
+      const interval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      return () => clearInterval(interval);
+    } else {
+      scanLineAnim.setValue(0);
+      setScanProgress(0);
+    }
+  }, [isScanning]);
+
+  const medicines = [
+    {
+      name: 'Amoxicillin 500mg',
+      type: 'Antibiotic • Capsule Form',
+      dosage: '1 cap / 8 hrs',
+      prices: [
+        { shop: 'MediCare Plus', price: '$12.50', available: true },
+        { shop: 'Life Pharma', price: '$14.20', available: true },
+      ]
+    },
+    {
+      name: 'Paracetamol 650mg',
+      type: 'Pain Relief • Tablet',
+      dosage: '1 tab / 6 hrs',
+      prices: [
+        { shop: 'HealthMart', price: '$5.99', available: true },
+        { shop: 'QuickMeds', price: '$6.50', available: true },
+      ]
+    },
+    {
+      name: 'Ibuprofen 400mg',
+      type: 'Anti-inflammatory • Tablet',
+      dosage: '1 tab / 8 hrs',
+      prices: [
+        { shop: 'CityPharmacy', price: '$8.75', available: true },
+        { shop: 'MediCare Plus', price: '$9.20', available: true },
+      ]
+    }
+  ];
+
+  const handleScan = () => {
+    if (isScanning) return;
+    
+    setIsScanning(true);
+    setDetectionResult(null);
+    
+    // Simulate scanning process with progress
+    setTimeout(() => {
+      setIsScanning(false);
+      const randomMedicine = medicines[Math.floor(Math.random() * medicines.length)];
+      setDetectionResult(randomMedicine);
+      Alert.alert(
+        'Medicine Detected!',
+        `Found: ${randomMedicine.name}`,
+        [{ text: 'OK' }]
+      );
+    }, 2000);
+  };
+
+  const handleImagePick = () => {
+    Alert.alert(
+      'Scan Medicine',
+      'Choose how to scan the medicine',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Take Photo', 
+          onPress: () => {
+            Alert.alert('Camera', 'Opening camera...', [{ text: 'OK', onPress: handleScan }]);
+          }
+        },
+        { 
+          text: 'Choose from Gallery', 
+          onPress: () => {
+            Alert.alert('Gallery', 'Opening gallery...', [{ text: 'OK', onPress: handleScan }]);
+          }
+        },
+      ]
+    );
+  };
+
+  const handleFlashToggle = () => {
+    Alert.alert('Flash', 'Flash feature will be available with camera access');
+  };
+
+  const scanLineTranslateY = scanLineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-SCREEN_WIDTH * 0.32, SCREEN_WIDTH * 0.32],
+  });
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -27,79 +148,107 @@ export default function MedicineDetection({ navigation }) {
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
-          <View style={styles.scanLine} />
+          
+          {isScanning && (
+            <Animated.View 
+              style={[
+                styles.scanLine,
+                { transform: [{ translateY: scanLineTranslateY }] }
+              ]} 
+            />
+          )}
+          
           <View style={styles.scanIcon}>
-            <MaterialCommunityIcons name="focus-field" size={40} color="rgba(25,99,235,0.6)" />
-            <Text style={styles.scanText}>SCANNING...</Text>
+            <MaterialCommunityIcons 
+              name={isScanning ? "loading" : "camera-outline"} 
+              size={48} 
+              color={isScanning ? "#1963eb" : "rgba(25,99,235,0.6)"} 
+            />
+            <Text style={styles.scanText}>
+              {isScanning ? `SCANNING... ${scanProgress}%` : 'TAP SCAN TO START'}
+            </Text>
+            {!isScanning && !detectionResult && (
+              <Text style={styles.scanHint}>Point camera at medicine label</Text>
+            )}
           </View>
         </View>
       </View>
 
-      <View style={styles.detectionCard}>
-        <View style={styles.detectionHeader}>
-          <View>
-            <Text style={styles.detectionBadge}>DETECTION SUCCESS</Text>
-            <Text style={styles.medicineName}>Amoxicillin 500mg</Text>
-            <Text style={styles.medicineType}>Antibiotic • Capsule Form</Text>
+      {detectionResult && (
+        <View style={styles.detectionCard}>
+          <View style={styles.detectionHeader}>
+            <View>
+              <Text style={styles.detectionBadge}>DETECTION SUCCESS</Text>
+              <Text style={styles.medicineName}>{detectionResult.name}</Text>
+              <Text style={styles.medicineType}>{detectionResult.type}</Text>
+            </View>
+            <View style={styles.medicineIcon}>
+              <MaterialCommunityIcons name="pill" size={24} color="#1963eb" />
+            </View>
           </View>
-          <View style={styles.medicineIcon}>
-            <MaterialCommunityIcons name="pill" size={24} color="#1963eb" />
-          </View>
-        </View>
 
-        <View style={styles.inputRow}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Patient Age</Text>
-            <View style={styles.inputContainer}>
-              <TextInput style={styles.input} value="28" keyboardType="number-pad" />
-              <Text style={styles.inputUnit}>YRS</Text>
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Patient Age</Text>
+              <View style={styles.inputContainer}>
+                <TextInput 
+                  style={styles.input} 
+                  value={patientAge} 
+                  onChangeText={setPatientAge}
+                  keyboardType="number-pad" 
+                />
+                <Text style={styles.inputUnit}>YRS</Text>
+              </View>
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Dosage Advice</Text>
+              <View style={styles.dosageBox}>
+                <Text style={styles.dosageText}>{detectionResult.dosage}</Text>
+              </View>
             </View>
           </View>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Dosage Advice</Text>
-            <View style={styles.dosageBox}>
-              <Text style={styles.dosageText}>1 cap / 8 hrs</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.priceSection}>
-          <View style={styles.priceSectionHeader}>
-            <Text style={styles.inputLabel}>Price Comparison</Text>
-            <Text style={styles.nearbyBadge}>NEARBY</Text>
-          </View>
-          <View style={styles.shopCard}>
-            <View style={styles.shopInfo}>
-              <MaterialCommunityIcons name="store" size={16} color="#10b981" />
-              <Text style={styles.shopName}>MediCare Plus</Text>
+          <View style={styles.priceSection}>
+            <View style={styles.priceSectionHeader}>
+              <Text style={styles.inputLabel}>Price Comparison</Text>
+              <Text style={styles.nearbyBadge}>NEARBY</Text>
             </View>
-            <Text style={styles.shopPrice}>$12.50</Text>
+            {detectionResult.prices.map((item, index) => (
+              <View key={index} style={styles.shopCard}>
+                <View style={styles.shopInfo}>
+                  <MaterialCommunityIcons 
+                    name="store" 
+                    size={16} 
+                    color={index === 0 ? "#10b981" : "#94a3b8"} 
+                  />
+                  <Text style={styles.shopName}>{item.shop}</Text>
+                </View>
+                <Text style={styles.shopPrice}>{item.price}</Text>
+              </View>
+            ))}
           </View>
-          <View style={styles.shopCard}>
-            <View style={styles.shopInfo}>
-              <MaterialCommunityIcons name="store" size={16} color="#94a3b8" />
-              <Text style={styles.shopName}>Life Pharma</Text>
-            </View>
-            <Text style={styles.shopPrice}>$14.20</Text>
-          </View>
-        </View>
 
-        <TouchableOpacity style={styles.reserveBtn}>
-          <MaterialCommunityIcons name="cart" size={20} color="#fff" />
-          <Text style={styles.reserveBtnText}>Reserve at MediCare</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.reserveBtn}>
+            <MaterialCommunityIcons name="cart" size={20} color="#fff" />
+            <Text style={styles.reserveBtnText}>Reserve at {detectionResult.prices[0].shop}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.cameraControls}>
-        <TouchableOpacity style={styles.controlBtn}>
+        <TouchableOpacity style={styles.controlBtn} onPress={handleImagePick}>
           <MaterialCommunityIcons name="image" size={24} color="#cbd5e1" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.scanButton}>
+        <TouchableOpacity 
+          style={styles.scanButton} 
+          onPress={handleScan}
+          disabled={isScanning}
+        >
           <View style={styles.scanButtonInner}>
             <MaterialCommunityIcons name="qrcode-scan" size={32} color="#fff" />
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.controlBtn}>
+        <TouchableOpacity style={styles.controlBtn} onPress={handleFlashToggle}>
           <MaterialCommunityIcons name="flash" size={24} color="#cbd5e1" />
         </TouchableOpacity>
       </View>
@@ -213,18 +362,28 @@ const styles = StyleSheet.create({
   scanLine: {
     position: 'absolute',
     width: '100%',
-    height: 2,
+    height: 3,
     backgroundColor: '#1963eb',
+    shadowColor: '#1963eb',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 5,
   },
   scanIcon: {
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   scanText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
-    color: 'rgba(25,99,235,0.6)',
+    color: 'rgba(25,99,235,0.8)',
     letterSpacing: 2,
+  },
+  scanHint: {
+    fontSize: 10,
+    color: '#64748b',
+    marginTop: 4,
   },
   detectionCard: {
     backgroundColor: 'rgba(28,31,39,0.95)',
