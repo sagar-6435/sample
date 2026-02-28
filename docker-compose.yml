@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: lifelink-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: lifelink
+
+  backend:
+    build: ./backend
+    container_name: lifelink-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/lifelink
+      - JWT_SECRET=your_jwt_secret_change_in_production
+      - ML_SERVICE_URL=http://ml-service:8000
+    depends_on:
+      - mongodb
+      - ml-service
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  ml-service:
+    build: ./ml-service
+    container_name: lifelink-ml-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml-service:/app
+      - ./ml-service/models:/app/models
+    environment:
+      - PORT=8000
+      - MODEL_PATH=/app/models/medicine_classifier.h5
+
+volumes:
+  mongodb_data:

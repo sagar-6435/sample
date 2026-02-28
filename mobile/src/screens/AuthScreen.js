@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { setUserRole, setUserData, getDashboardForRole } from '../utils/userStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -11,13 +12,16 @@ export default function AuthScreen({ navigation }) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
 
   const handleContinue = () => {
-    if (selectedRole === 'patient') {
-      navigation.replace('PatientDashboard');
-    } else if (selectedRole === 'doctor') {
-      navigation.replace('DoctorDashboard');
-    } else {
-      navigation.replace('HospitalDashboard');
-    }
+    // Save user data
+    setUserRole(selectedRole);
+    setUserData({
+      email: email,
+      name: email.split('@')[0], // Simple name extraction
+    });
+
+    // Navigate to appropriate dashboard
+    const dashboard = getDashboardForRole(selectedRole);
+    navigation.replace(dashboard);
   };
 
   return (
@@ -120,7 +124,11 @@ export default function AuthScreen({ navigation }) {
 
         <TouchableOpacity 
           style={styles.superAdminBtn} 
-          onPress={() => navigation.replace('SuperAdminDashboard')}
+          onPress={() => {
+            setUserRole('superadmin');
+            setUserData({ email: 'admin@lifelink.com', name: 'Super Admin' });
+            navigation.replace('SuperAdminDashboard');
+          }}
         >
           <MaterialCommunityIcons name="shield-crown" size={20} color="#fbbf24" />
           <Text style={styles.superAdminBtnText}>Super Admin Access</Text>

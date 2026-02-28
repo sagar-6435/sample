@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getUserData, getUserRole, getRoleInfo, getDashboardForRole, clearUserData } from '../utils/userStorage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }) {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.9))[0];
+  
+  // Get user data
+  const userData = getUserData();
+  const userRole = getUserRole();
+  const roleInfo = getRoleInfo(userRole);
 
   useEffect(() => {
     Animated.parallel([
@@ -38,6 +44,8 @@ export default function ProfileScreen({ navigation }) {
           text: 'Logout',
           style: 'destructive',
           onPress: () => {
+            // Clear user data
+            clearUserData();
             // Navigate to Auth screen and reset navigation stack
             navigation.reset({
               index: 0,
@@ -50,7 +58,13 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
+  const handleBackToDashboard = () => {
+    const dashboard = getDashboardForRole(userRole);
+    navigation.navigate(dashboard);
+  };
+
   const menuItems = [
+    { id: 0, icon: 'view-dashboard', title: 'Back to Dashboard', subtitle: `Return to ${roleInfo.label} dashboard`, route: null, action: 'dashboard', color: roleInfo.color },
     { id: 1, icon: 'account-edit', title: 'Edit Profile', subtitle: 'Update your information', route: 'EditProfile' },
     { id: 2, icon: 'shield-check', title: 'Privacy & Security', subtitle: 'Manage your privacy settings', route: null },
     { id: 3, icon: 'bell-ring', title: 'Notifications', subtitle: 'Configure notifications', route: 'Notifications' },
@@ -62,7 +76,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleBackToDashboard}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
@@ -82,15 +96,19 @@ export default function ProfileScreen({ navigation }) {
           ]}
         >
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <MaterialCommunityIcons name="account" size={48} color="#1963eb" />
+            <View style={[styles.avatar, { borderColor: roleInfo.color }]}>
+              <MaterialCommunityIcons name={roleInfo.icon} size={48} color={roleInfo.color} />
             </View>
-            <TouchableOpacity style={styles.editAvatarBtn}>
+            <TouchableOpacity style={[styles.editAvatarBtn, { backgroundColor: roleInfo.color }]}>
               <MaterialCommunityIcons name="camera" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Alex Johnson</Text>
-          <Text style={styles.userEmail}>alex.johnson@email.com</Text>
+          <Text style={styles.userName}>{userData.name || 'User'}</Text>
+          <Text style={styles.userEmail}>{userData.email || 'user@email.com'}</Text>
+          <View style={styles.roleBadge}>
+            <MaterialCommunityIcons name={roleInfo.icon} size={16} color={roleInfo.color} />
+            <Text style={[styles.roleText, { color: roleInfo.color }]}>{roleInfo.label}</Text>
+          </View>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>12</Text>
@@ -114,10 +132,16 @@ export default function ProfileScreen({ navigation }) {
             <TouchableOpacity 
               key={item.id} 
               style={styles.menuItem}
-              onPress={() => item.route && navigation.navigate(item.route)}
+              onPress={() => {
+                if (item.action === 'dashboard') {
+                  handleBackToDashboard();
+                } else if (item.route) {
+                  navigation.navigate(item.route);
+                }
+              }}
             >
-              <View style={styles.menuIcon}>
-                <MaterialCommunityIcons name={item.icon} size={24} color="#1963eb" />
+              <View style={[styles.menuIcon, item.color && { backgroundColor: `${item.color}20` }]}>
+                <MaterialCommunityIcons name={item.icon} size={24} color={item.color || '#1963eb'} />
               </View>
               <View style={styles.menuContent}>
                 <Text style={styles.menuTitle}>{item.title}</Text>
@@ -198,7 +222,23 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     color: '#94a3b8',
+    marginBottom: 12,
+  },
+  roleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(30,41,59,0.8)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  roleText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   statsRow: {
     flexDirection: 'row',
