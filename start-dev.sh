@@ -11,22 +11,6 @@ if ! pgrep -x "mongod" > /dev/null; then
     exit 1
 fi
 
-# Start ML Service
-echo "📊 Starting ML Service..."
-cd ml-service
-if [ ! -d "venv" ]; then
-    echo "Creating Python virtual environment..."
-    python -m venv venv
-fi
-source venv/bin/activate
-pip install -q -r requirements.txt
-python main.py &
-ML_PID=$!
-cd ..
-
-# Wait for ML service to start
-sleep 3
-
 # Start Backend API
 echo "🔧 Starting Backend API..."
 cd backend
@@ -37,6 +21,9 @@ fi
 npm run dev &
 BACKEND_PID=$!
 cd ..
+
+# Wait for backend to start
+sleep 3
 
 # Start Mobile App
 echo "📱 Starting Mobile App..."
@@ -52,14 +39,13 @@ cd ..
 echo ""
 echo "✅ All services started!"
 echo ""
-echo "📊 ML Service:    http://localhost:8000"
 echo "🔧 Backend API:   http://localhost:3000"
 echo "📱 Mobile App:    Check Expo DevTools"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
 # Trap Ctrl+C and cleanup
-trap "echo ''; echo '🛑 Stopping all services...'; kill $ML_PID $BACKEND_PID $MOBILE_PID 2>/dev/null; exit" INT
+trap "echo ''; echo '🛑 Stopping all services...'; kill $BACKEND_PID $MOBILE_PID 2>/dev/null; exit" INT
 
 # Wait for all processes
 wait

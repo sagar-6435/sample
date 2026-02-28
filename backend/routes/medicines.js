@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Medicine = require('../models/Medicine');
 const multer = require('multer');
-const axios = require('axios');
-const FormData = require('form-data');
 
 // Configure multer for file uploads
 const upload = multer({
@@ -17,8 +15,6 @@ const upload = multer({
     }
   }
 });
-
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:8000';
 
 // Search medicines
 router.get('/search', async (req, res) => {
@@ -47,101 +43,79 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// AI medicine detection - calls FastAPI ML service
+// Medicine detection (mock implementation - replace with your own logic)
 router.post('/detect', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    // Create form data to send to ML service
-    const formData = new FormData();
-    formData.append('file', req.file.buffer, {
-      filename: req.file.originalname,
-      contentType: req.file.mimetype
+    // Mock detection - return sample medicines from database
+    const medicines = await Medicine.find().limit(3);
+    
+    res.json({
+      success: true,
+      confidence: 0.85,
+      detected: medicines[0] || {
+        name: 'Sample Medicine',
+        category: 'General',
+        description: 'Medicine detection feature - integrate your own detection logic'
+      },
+      suggestions: medicines,
+      note: 'Mock detection - integrate your own medicine detection service'
     });
-
-    // Call FastAPI ML service
-    const mlResponse = await axios.post(
-      `${ML_SERVICE_URL}/api/detect`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders()
-        },
-        timeout: 30000 // 30 second timeout
-      }
-    );
-
-    res.json(mlResponse.data);
   } catch (error) {
-    console.error('ML Service Error:', error.message);
-    
-    // Fallback to mock data if ML service is unavailable
-    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-      const medicines = await Medicine.find().limit(3);
-      return res.json({
-        success: true,
-        confidence: 0.85,
-        detected: medicines[0] || {},
-        suggestions: medicines,
-        note: 'ML service unavailable - using fallback data'
-      });
-    }
-    
+    console.error('Detection Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Batch detection
+// Batch detection (mock implementation)
 router.post('/detect-batch', upload.array('images', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No image files provided' });
     }
 
-    const formData = new FormData();
-    req.files.forEach(file => {
-      formData.append('files', file.buffer, {
-        filename: file.originalname,
-        contentType: file.mimetype
-      });
+    const medicines = await Medicine.find().limit(req.files.length);
+    
+    const results = req.files.map((file, index) => ({
+      filename: file.originalname,
+      detected: medicines[index] || null,
+      confidence: 0.80 + Math.random() * 0.15
+    }));
+
+    res.json({
+      success: true,
+      results,
+      note: 'Mock batch detection - integrate your own detection service'
     });
-
-    const mlResponse = await axios.post(
-      `${ML_SERVICE_URL}/api/detect-batch`,
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders()
-        },
-        timeout: 60000 // 60 second timeout for batch
-      }
-    );
-
-    res.json(mlResponse.data);
   } catch (error) {
-    console.error('ML Service Error:', error.message);
+    console.error('Batch Detection Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Analyze dosage
+// Analyze dosage (mock implementation)
 router.post('/analyze-dosage', async (req, res) => {
   try {
     const { medicine_id, patient_age, patient_weight } = req.body;
 
-    const mlResponse = await axios.post(
-      `${ML_SERVICE_URL}/api/analyze-dosage`,
-      { medicine_id, patient_age, patient_weight },
-      {
-        params: { medicine_id, patient_age, patient_weight }
-      }
-    );
-
-    res.json(mlResponse.data);
+    // Mock dosage analysis
+    res.json({
+      success: true,
+      medicine_id,
+      recommended_dosage: '500mg twice daily',
+      warnings: ['Take with food', 'Avoid alcohol'],
+      patient_specific: {
+        age: patient_age,
+        weight: patient_weight,
+        adjusted_dosage: '500mg twice daily'
+      },
+      note: 'Mock dosage analysis - integrate your own medical logic'
+    });
   } catch (error) {
-    console.error('ML Service Error:', error.message);
+    console.error('Dosage Analysis Error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -153,22 +127,6 @@ router.get('/suggestions', async (req, res) => {
     res.json(medicines);
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-// Health check for ML service
-router.get('/ml-health', async (req, res) => {
-  try {
-    const response = await axios.get(`${ML_SERVICE_URL}/health`, { timeout: 5000 });
-    res.json({
-      ml_service: 'connected',
-      ...response.data
-    });
-  } catch (error) {
-    res.status(503).json({
-      ml_service: 'disconnected',
-      error: error.message
-    });
   }
 });
 

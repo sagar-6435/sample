@@ -1,8 +1,8 @@
-# LifeLink - AI-Powered Healthcare Platform
+# LifeLink - Emergency Healthcare Platform
 
-A comprehensive healthcare application with React Native mobile app and Node.js backend API.
+A comprehensive healthcare mobile application for emergency medical services, doctor appointments, and health management.
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────┐
@@ -10,127 +10,213 @@ A comprehensive healthcare application with React Native mobile app and Node.js 
 │  (React Native) │
 └────────┬────────┘
          │
-         ├──────────────────┐
-         │                  │
-         ▼                  ▼
-┌─────────────────┐  ┌──────────────────┐
-│  Backend API    │  │   ML Service     │
-│  (Node/Express) │◄─┤   (FastAPI)      │
-└────────┬────────┘  └──────────────────┘
-         │                  │
-         ▼                  ▼
-┌─────────────────┐  ┌──────────────────┐
-│    MongoDB      │  │  Trained Model   │
-│   (Database)    │  │  (TF/PyTorch)    │
-└─────────────────┘  └──────────────────┘
+         ▼
+┌─────────────────┐
+│  Backend API    │
+│  (Node/Express) │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│    MongoDB      │
+└─────────────────┘
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-lifelink-app/
+lifelink/
 ├── mobile/          # React Native mobile app (Expo)
 ├── backend/         # Node.js/Express API server
-├── ml-service/      # FastAPI ML service for medicine detection
-└── client/          # (Reserved for web client)
+└── docker-compose.yml
 ```
 
-## Features
+## ✨ Features
 
 ### Patient Features
-- Doctor search and booking with AI recommendations
-- Nearby hospital finder with real-time availability
-- Emergency ambulance tracking
-- AI-powered medicine detection and price comparison
-- Medical reports management with AI analysis
-- Appointment scheduling with payment integration
+- 🚨 Emergency ambulance booking
+- 📅 Doctor appointment scheduling
+- 🏥 Hospital search and navigation
+- 📄 Medical reports management
+- 💊 Medicine information
+- 📍 Real-time ambulance tracking
+- 🔔 Notifications
 
 ### Doctor Features
-- Patient management dashboard
-- Schedule management
-- Digital prescription uploads
-- Emergency duty status toggle
-- Appointment notifications
+- 📊 Patient management dashboard
+- 📅 Schedule management
+- 📈 Statistics and analytics
+- 👥 Patient history
 
 ### Hospital Features
-- Fleet management for ambulances
-- Blood bank inventory tracking
-- Offline booking management
-- Facility showcase gallery
-- Real-time dispatch monitoring
+- 🚑 Fleet management
+- 📦 Inventory tracking
+- 👨‍⚕️ Staff management
 
-## Getting Started
+### Admin Features
+- 🎛️ System overview
+- 👥 User management
+- 📊 Analytics
 
-**New to the project?** Start here: [QUICKSTART.md](QUICKSTART.md) (5 minutes)
+## 🚀 Quick Start
 
-**Detailed setup?** See [SETUP.md](SETUP.md) for complete instructions.
+### Prerequisites
 
-### Quick Start
+- Node.js 18+
+- MongoDB 7.0+
+- npm or yarn
+- Expo Go app (for mobile testing)
 
-**Windows:**
+### Installation
+
+1. **Clone the repository**
 ```bash
-start-dev.bat
+git clone <repository-url>
+cd lifelink
 ```
 
-**Linux/Mac:**
+2. **Install dependencies**
 ```bash
-chmod +x start-dev.sh
+# Backend
+cd backend
+npm install
+
+# Mobile App
+cd ../mobile
+npm install
+```
+
+3. **Setup environment variables**
+```bash
+# Backend
+cd backend
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. **Start MongoDB**
+```bash
+mongod --dbpath /path/to/data
+```
+
+5. **Start all services**
+```bash
+# Windows
+start-dev.bat
+
+# Linux/Mac
 ./start-dev.sh
 ```
 
-**Docker (All Platforms):**
-```bash
-docker-compose up -d
-```
-
-This starts:
-- MongoDB on port 27017
+This will start:
 - Backend API on port 3000
-- ML Service on port 8000
+- Mobile App via Expo
 
-Then start the mobile app:
-```bash
-cd mobile
-npm install
-npm start
-```
+## 🔧 Technology Stack
 
-## Tech Stack
+### Backend
+- Node.js & Express
+- MongoDB & Mongoose
+- JWT authentication
+- Multer for file uploads
 
-### Mobile
+### Mobile App
 - React Native
 - Expo
 - React Navigation
 - Expo Camera & Image Picker
 
-### Backend
-- Node.js
-- Express
-- MongoDB with Mongoose
-- JWT Authentication
-- Geospatial queries for location-based features
-- Multer for file uploads
-- Axios for ML service integration
-
-### ML Service
-- FastAPI
-- Python 3.11
-- TensorFlow/PyTorch (for your trained model)
-- Pillow for image processing
-- Uvicorn ASGI server
-
-## API Documentation
+## 📚 Documentation
 
 - Backend API: See [backend/README.md](backend/README.md)
-- ML Service: `http://localhost:8000/docs` (Swagger UI)
 - Complete Setup: See [SETUP.md](SETUP.md)
+- Quick Start: See [QUICKSTART.md](QUICKSTART.md)
 
-## Integrating Your Model
+## 🌐 API Endpoints
 
-1. Place your trained model in `ml-service/models/`
-2. Update `load_model()` and `predict_medicine()` in `ml-service/main.py`
-3. See [ml-service/INTEGRATION.md](ml-service/INTEGRATION.md) for detailed guide
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
 
-## License
+### Medicines
+- `GET /api/medicines/search` - Search medicines
+- `GET /api/medicines/:id` - Get medicine details
+- `POST /api/medicines/detect` - Detect medicine from image
+- `GET /api/medicines/suggestions` - Get medicine suggestions
 
-MIT
+### Appointments
+- `POST /api/appointments` - Book appointment
+- `GET /api/appointments` - Get user appointments
+- `PUT /api/appointments/:id` - Update appointment
+
+### Emergency
+- `POST /api/emergency/request` - Request ambulance
+- `GET /api/emergency/:id` - Track ambulance
+
+## 🔐 Environment Variables
+
+### Backend (.env)
+```env
+PORT=3000
+MONGODB_URI=mongodb://localhost:27017/lifelink
+JWT_SECRET=your_secret_key
+```
+
+## 🧪 Testing
+
+### Backend
+```bash
+cd backend
+npm test
+```
+
+## 📱 Mobile Development
+
+```bash
+cd mobile
+npm start
+```
+
+Then:
+- Press `a` for Android
+- Press `i` for iOS
+- Scan QR code with Expo Go app
+
+## 🐳 Docker Deployment
+
+```bash
+docker-compose up -d
+```
+
+Services:
+- MongoDB: `localhost:27017`
+- Backend API: `http://localhost:3000`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+1. Check documentation
+2. Search existing issues
+3. Create a new issue with details
+
+## 🎯 Roadmap
+
+- [ ] Real-time chat with doctors
+- [ ] Video consultations
+- [ ] Health tracking and analytics
+- [ ] Prescription management
+- [ ] Insurance integration
+- [ ] Multi-language support
+- [ ] Offline mode support
