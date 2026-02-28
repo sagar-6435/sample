@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import { API_ENDPOINTS } from '../config/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -89,23 +90,128 @@ export default function MedicineDetection({ navigation }) {
     }
   ];
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (isScanning) return;
     
     setIsScanning(true);
     setDetectionResult(null);
+    setScanProgress(0);
     
-    // Simulate scanning process with progress
-    setTimeout(() => {
-      setIsScanning(false);
-      const randomMedicine = medicines[Math.floor(Math.random() * medicines.length)];
-      setDetectionResult(randomMedicine);
+    try {
+      // Simulate scanning progress
+      const progressInterval = setInterval(() => {
+        setScanProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      // In a real scenario, you would capture/select an image first
+      // For now, we'll show an alert to select image
       Alert.alert(
-        'Medicine Detected!',
-        `Found: ${randomMedicine.name}`,
-        [{ text: 'OK' }]
+        'Select Image',
+        'Please select a medicine image to analyze',
+        [
+          {
+            text: 'Cancel',
+            onPress: () => {
+              clearInterval(progressInterval);
+              setIsScanning(false);
+              setScanProgress(0);
+            },
+            style: 'cancel'
+          },
+          {
+            text: 'Choose Image',
+            onPress: async () => {
+              try {
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  allowsEditing: true,
+                  aspect: [4, 3],
+                  quality: 0.8,
+                  base64: false,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                  const imageUri = result.assets[0].uri;
+                  
+                  // Create form data
+                  const formData = new FormData();
+                  formData.append('image', {
+                    uri: imageUri,
+                    type: 'image/jpeg',
+                    name: 'medicine.jpg',
+                  });
+
+                  // Call backend API
+                  const response = await fetch(API_ENDPOINTS.MEDICINE_DETECT, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                      'Content-Type': 'multipart/form-data',
+                    },
+                  });
+
+                  clearInterval(progressInterval);
+                  setScanProgress(100);
+
+                  if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success && data.detected) {
+                      // Format the result for display
+                      const formattedResult = {
+                        name: data.detected.name || 'Unknown Medicine',
+                        type: `${data.detected.category || 'Medicine'} • ${data.detected.genericName || 'Generic'}`,
+                        dosage: data.detected.usage || 'Consult doctor for dosage',
+                        uses: data.detected.uses || [],
+                        sideEffects: data.detected.sideEffects || [],
+                        precautions: data.detected.precautions || [],
+                        confidence: data.detected.confidence || 0,
+                        prices: [
+                          { shop: 'MediCare Plus', price: '$12.50', available: true },
+                          { shop: 'Life Pharma', price: '$14.20', available: true },
+                        ]
+                      };
+                      
+                      setDetectionResult(formattedResult);
+                      setIsScanning(false);
+                      
+                      Alert.alert(
+                        'Medicine Detected!',
+                        `${formattedResult.name}\n\nConfidence: ${(formattedResult.confidence * 100).toFixed(0)}%\n\nUses: ${formattedResult.uses.slice(0, 2).join(', ')}`,
+                        [{ text: 'OK' }]
+                      );
+                    } else {
+                      throw new Error('Detection failed');
+                    }
+                  } else {
+                    throw new Error('API request failed');
+                  }
+                } else {
+                  clearInterval(progressInterval);
+                  setIsScanning(false);
+                  setScanProgress(0);
+                }
+              } catch (error) {
+                clearInterval(progressInterval);
+                setIsScanning(false);
+                setScanProgress(0);
+                console.error('Detection error:', error);
+                Alert.alert(
+                  'Detection Failed',
+                  'Unable to analyze the medicine. Please try again with a clearer image.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          }
+        ]
       );
-    }, 2000);
+    } catch (error) {
+      setIsScanning(false);
+      setScanProgress(0);
+      console.error('Scan error:', error);
+      Alert.alert('Error', 'Failed to start scanning');
+    }
   };
 
   const handleImagePick = async () => {
@@ -117,39 +223,89 @@ export default function MedicineDetection({ navigation }) {
         return;
       }
 
-      Alert.alert(
-        'Scan Medicine',
-        'Choose how to scan the medicine',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Take Photo', 
-            onPress: async () => {
-              if (hasPermission === false) {
-                Alert.alert('Permission Required', 'Camera access is required to take photos');
-                return;
-              }
-              // Simulate taking photo and scanning
-              Alert.alert('Camera', 'Taking photo...', [{ text: 'OK', onPress: handleScan }]);
-            }
-          },
-          { 
-            text: 'Choose from Gallery', 
-            onPress: async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 1,
-              });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-              if (!result.canceled) {
-                Alert.alert('Processing', 'Analyzing image...', [{ text: 'OK', onPress: handleScan }]);
-              }
+      if (!result.canceled && result.assets[0]) {
+        setIsScanning(true);
+        setDetectionResult(null);
+        setScanProgress(0);
+
+        try {
+          const imageUri = result.assets[0].uri;
+          
+          // Simulate progress
+          const progressInterval = setInterval(() => {
+            setScanProgress(prev => Math.min(prev + 10, 90));
+          }, 200);
+
+          // Create form data
+          const formData = new FormData();
+          formData.append('image', {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: 'medicine.jpg',
+          });
+
+          // Call backend API
+          const response = await fetch(API_ENDPOINTS.MEDICINE_DETECT, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          clearInterval(progressInterval);
+          setScanProgress(100);
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success && data.detected) {
+              const formattedResult = {
+                name: data.detected.name || 'Unknown Medicine',
+                type: `${data.detected.category || 'Medicine'} • ${data.detected.genericName || 'Generic'}`,
+                dosage: data.detected.usage || 'Consult doctor for dosage',
+                uses: data.detected.uses || [],
+                sideEffects: data.detected.sideEffects || [],
+                precautions: data.detected.precautions || [],
+                confidence: data.detected.confidence || 0,
+                prices: [
+                  { shop: 'MediCare Plus', price: '$12.50', available: true },
+                  { shop: 'Life Pharma', price: '$14.20', available: true },
+                ]
+              };
+              
+              setDetectionResult(formattedResult);
+              setIsScanning(false);
+              
+              Alert.alert(
+                'Medicine Detected!',
+                `${formattedResult.name}\n\nConfidence: ${(formattedResult.confidence * 100).toFixed(0)}%`,
+                [{ text: 'View Details', onPress: () => {} }]
+              );
+            } else {
+              throw new Error('Detection failed');
             }
-          },
-        ]
-      );
+          } else {
+            throw new Error('API request failed');
+          }
+        } catch (error) {
+          setIsScanning(false);
+          setScanProgress(0);
+          console.error('Detection error:', error);
+          Alert.alert(
+            'Detection Failed',
+            'Unable to analyze the medicine. Please ensure:\n• Image is clear\n• Medicine label is visible\n• Good lighting\n\nThen try again.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to access gallery');
     }

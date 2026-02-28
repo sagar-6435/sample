@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Anima
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getUserData, getUserRole, getRoleInfo, getDashboardForRole, clearUserData } from '../utils/userStorage';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }) {
+  const { t } = useTranslation();
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.9))[0];
   
@@ -64,13 +67,14 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const menuItems = [
-    { id: 0, icon: 'view-dashboard', title: 'Back to Dashboard', subtitle: `Return to ${roleInfo.label} dashboard`, route: null, action: 'dashboard', color: roleInfo.color },
-    { id: 1, icon: 'account-edit', title: 'Edit Profile', subtitle: 'Update your information', route: 'EditProfile' },
-    { id: 2, icon: 'shield-check', title: 'Privacy & Security', subtitle: 'Manage your privacy settings', route: null },
-    { id: 3, icon: 'bell-ring', title: 'Notifications', subtitle: 'Configure notifications', route: 'Notifications' },
-    { id: 4, icon: 'credit-card', title: 'Payment Methods', subtitle: 'Manage payment options', route: null },
-    { id: 5, icon: 'help-circle', title: 'Help & Support', subtitle: 'Get help and support', route: 'HelpSupport' },
-    { id: 6, icon: 'information', title: 'About', subtitle: 'App version and info', route: 'About' },
+    { id: 0, icon: 'view-dashboard', title: t('dashboard.quickActions'), subtitle: `Return to ${roleInfo.label} dashboard`, route: null, action: 'dashboard', color: roleInfo.color },
+    { id: 1, icon: 'account-edit', title: t('profile.editProfile'), subtitle: 'Update your information', route: 'EditProfile' },
+    { id: 2, icon: 'translate', title: t('profile.language'), subtitle: 'Change app language', route: null, action: 'language' },
+    { id: 3, icon: 'shield-check', title: t('profile.privacy'), subtitle: 'Manage your privacy settings', route: null },
+    { id: 4, icon: 'bell-ring', title: t('profile.notifications'), subtitle: 'Configure notifications', route: 'Notifications' },
+    { id: 5, icon: 'credit-card', title: 'Payment Methods', subtitle: 'Manage payment options', route: null },
+    { id: 6, icon: 'help-circle', title: t('profile.helpSupport'), subtitle: 'Get help and support', route: 'HelpSupport' },
+    { id: 7, icon: 'information', title: t('profile.about'), subtitle: 'App version and info', route: 'About' },
   ];
 
   return (
@@ -79,10 +83,8 @@ export default function ProfileScreen({ navigation }) {
         <TouchableOpacity onPress={handleBackToDashboard}>
           <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity>
-          <MaterialCommunityIcons name="cog" size={24} color="#fff" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+        <LanguageSwitcher iconColor="#fff" iconSize={22} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -135,6 +137,13 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => {
                 if (item.action === 'dashboard') {
                   handleBackToDashboard();
+                } else if (item.action === 'language') {
+                  // Language switcher will be shown in modal via LanguageSwitcher component
+                  Alert.alert(
+                    t('profile.language'),
+                    'Use the language button in the header to change language',
+                    [{ text: t('common.ok') }]
+                  );
                 } else if (item.route) {
                   navigation.navigate(item.route);
                 }
@@ -154,7 +163,7 @@ export default function ProfileScreen({ navigation }) {
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={20} color="#ef4444" />
-          <Text style={styles.logoutText}>Logout</Text>
+          <Text style={styles.logoutText}>{t('auth.logout')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

@@ -3,10 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Keyboa
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { setUserRole, setUserData, getDashboardForRole } from '../utils/userStorage';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function AuthScreen({ navigation }) {
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState('patient');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -32,8 +35,11 @@ export default function AuthScreen({ navigation }) {
       >
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
-        <Text style={styles.headerTitle}>LifeLink</Text>
+        <View style={styles.headerLeft}>
+          <MaterialCommunityIcons name="heart-pulse" size={28} color="#1963eb" />
+          <Text style={styles.headerTitle}>LifeLink</Text>
+        </View>
+        <LanguageSwitcher iconColor="#fff" iconSize={22} />
       </View>
 
       <View style={styles.hero}>
@@ -165,15 +171,18 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 32,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
-    marginRight: 24,
   },
   hero: {
     alignItems: 'center',

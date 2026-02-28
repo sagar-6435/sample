@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Mock data for demonstration
 const MOCK_DOCTORS = [
@@ -120,8 +122,9 @@ const MOCK_MEDICINES = [
 ];
 
 const PatientDashboard = ({ navigation }) => {
+  const { t } = useTranslation();
+  
   // State management
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [doctors, setDoctors] = useState(MOCK_DOCTORS);
   const [hospitals, setHospitals] = useState(MOCK_HOSPITALS);
@@ -163,28 +166,6 @@ const PatientDashboard = ({ navigation }) => {
   }, []);
 
   // Handlers
-  const handleSearch = (text) => {
-    setSearchQuery(text);
-    if (text.length > 2) {
-      performSearch(text);
-    } else if (text.length === 0) {
-      setDoctors(MOCK_DOCTORS.filter(d => !hiddenDoctors.includes(d.id)));
-    }
-  };
-
-  const performSearch = (query) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const filtered = MOCK_DOCTORS.filter(doctor =>
-        !hiddenDoctors.includes(doctor.id) &&
-        (doctor.name.toLowerCase().includes(query.toLowerCase()) ||
-        doctor.specialty.toLowerCase().includes(query.toLowerCase()))
-      );
-      setDoctors(filtered);
-      setIsLoading(false);
-    }, 500);
-  };
-
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setIsLoading(true);
@@ -211,12 +192,12 @@ const PatientDashboard = ({ navigation }) => {
 
   const handleHideDoctor = (doctorId) => {
     Alert.alert(
-      'Hide Doctor',
-      'Are you sure you want to hide this doctor from your recommendations?',
+      t('patient.hideDoctor'),
+      t('patient.hideDoctorConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Hide',
+          text: t('patient.hide'),
           style: 'destructive',
           onPress: () => {
             setHiddenDoctors([...hiddenDoctors, doctorId]);
@@ -234,7 +215,6 @@ const PatientDashboard = ({ navigation }) => {
       setDoctors(MOCK_DOCTORS.filter(d => !hiddenDoctors.includes(d.id)));
       setHospitals(MOCK_HOSPITALS.filter(h => h.distance <= radiusKm));
       setSelectedCategory('all');
-      setSearchQuery('');
       setRefreshing(false);
     }, 1500);
   }, [hiddenDoctors, radiusKm]);
@@ -245,11 +225,11 @@ const PatientDashboard = ({ navigation }) => {
       setShowPaymentModal(true);
     } else {
       Alert.alert(
-        'Doctor Unavailable',
-        'This doctor is currently not available. Would you like to see similar doctors?',
+        t('patient.doctorUnavailable'),
+        t('patient.doctorUnavailableMessage'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Show Similar', onPress: () => handleCategorySelect(doctor.category) }
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('patient.showSimilar'), onPress: () => handleCategorySelect(doctor.category) }
         ]
       );
     }
@@ -260,14 +240,14 @@ const PatientDashboard = ({ navigation }) => {
     // Add slight delay for smooth modal close
     setTimeout(() => {
       Alert.alert(
-        'Payment Confirmation',
-        `Booking appointment with ${selectedDoctor.name}\nConsultation Fee: $${selectedDoctor.consultationFee}\nPayment Method: ${paymentMethod}`,
+        t('patient.paymentConfirmation'),
+        `${t('patient.bookingWith')} ${selectedDoctor.name}\n${t('patient.consultationFee')}: $${selectedDoctor.consultationFee}\n${t('patient.paymentMethod')}: ${paymentMethod}`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel'), style: 'cancel' },
           {
-            text: 'Confirm & Pay',
+            text: t('patient.confirmAndPay'),
             onPress: () => {
-              Alert.alert('Success', 'Appointment booked successfully!');
+              Alert.alert(t('common.success'), t('patient.appointmentBookedSuccess'));
               navigation.navigate('AppointmentBooking', { 
                 doctorId: selectedDoctor.id,
                 paid: true 
@@ -281,16 +261,16 @@ const PatientDashboard = ({ navigation }) => {
 
   const handleEmergencyCall = () => {
     Alert.alert(
-      'Call Ambulance',
-      'Do you want to call the nearest ambulance?',
+      t('emergency.callAmbulance'),
+      t('patient.callAmbulanceConfirm'),
       [
-        { text: 'No', style: 'cancel' },
+        { text: t('common.no'), style: 'cancel' },
         {
-          text: 'Yes, Call Now',
+          text: t('patient.yesCallNow'),
           onPress: () => {
             // Simulate calling ambulance
             Linking.openURL('tel:911').catch(() => {
-              Alert.alert('Error', 'Unable to make call');
+              Alert.alert(t('common.error'), 'Unable to make call');
             });
             navigation.navigate('AmbulanceTracking');
           },
@@ -302,12 +282,12 @@ const PatientDashboard = ({ navigation }) => {
 
   const handleEmergencyPress = () => {
     Alert.alert(
-      'Emergency Services',
-      'Are you sure you want to request emergency assistance?',
+      t('patient.emergencyServices'),
+      t('patient.emergencyServicesConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Call Emergency', 
+          text: t('patient.callEmergency'), 
           onPress: handleEmergencyCall,
           style: 'destructive'
         }
@@ -361,7 +341,7 @@ const PatientDashboard = ({ navigation }) => {
           accessibilityRole="button"
         >
           <Text style={styles.bookBtnText}>
-            {doctor.available ? 'Book Now' : 'Unavailable'}
+            {doctor.available ? t('patient.bookNow') : t('patient.unavailable')}
           </Text>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -373,7 +353,7 @@ const PatientDashboard = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1963eb" />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -395,19 +375,22 @@ const PatientDashboard = ({ navigation }) => {
             <MaterialCommunityIcons name="account" size={24} color="#1963eb" />
           </View>
           <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.welcomeText}>{t('dashboard.welcome')},</Text>
             <Text style={styles.userName}>Alex Johnson</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={styles.notificationBtn}
-          accessibilityLabel="Notifications"
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <MaterialCommunityIcons name="bell-outline" size={24} color="#64748b" />
-          <View style={styles.notificationBadge} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <LanguageSwitcher iconColor="#64748b" iconSize={22} />
+          <TouchableOpacity
+            style={styles.notificationBtn}
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <MaterialCommunityIcons name="bell-outline" size={24} color="#64748b" />
+            <View style={styles.notificationBadge} />
+          </TouchableOpacity>
+        </View>
       </Animated.View>
 
       {/* Main Content */}
@@ -423,27 +406,6 @@ const PatientDashboard = ({ navigation }) => {
           />
         }
       >
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={20} color="#94a3b8" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search symptoms, doctors, clinics"
-            placeholderTextColor="#94a3b8"
-            value={searchQuery}
-            onChangeText={handleSearch}
-            returnKeyType="search"
-            clearButtonMode="while-editing"
-            accessibilityLabel="Search"
-            accessibilityHint="Enter symptoms, doctor names, or clinics"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
-              <MaterialCommunityIcons name="close" size={20} color="#94a3b8" />
-            </TouchableOpacity>
-          )}
-        </View>
-
         {/* Categories */}
         <ScrollView
           horizontal
@@ -493,25 +455,25 @@ const PatientDashboard = ({ navigation }) => {
         {/* Nearby Hospitals */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nearby Hospitals</Text>
+            <Text style={styles.sectionTitle}>{t('patient.nearbyHospitals')}</Text>
             <TouchableOpacity
               onPress={() => setShowRadiusModal(true)}
               accessibilityLabel="Change search radius"
               accessibilityRole="button"
             >
-              <Text style={styles.seeAll}>{radiusKm} km radius</Text>
+              <Text style={styles.seeAll}>{radiusKm} {t('patient.radiusKm')}</Text>
             </TouchableOpacity>
           </View>
           
           {hospitals.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="hospital-building" size={48} color="#334155" />
-              <Text style={styles.emptyStateText}>No hospitals within {radiusKm} km</Text>
+              <Text style={styles.emptyStateText}>{t('patient.noHospitalsWithin')} {radiusKm} {t('patient.km')}</Text>
               <TouchableOpacity
                 style={styles.resetButton}
                 onPress={() => handleRadiusChange(10)}
               >
-                <Text style={styles.resetButtonText}>Increase Radius</Text>
+                <Text style={styles.resetButtonText}>{t('patient.increaseRadius')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -538,9 +500,9 @@ const PatientDashboard = ({ navigation }) => {
                       <MaterialCommunityIcons name="star" size={12} color="#fbbf24" />
                       <Text style={styles.ratingText}>{hospital.rating}</Text>
                     </View>
-                    <Text style={styles.distanceText}>{hospital.distance} km</Text>
+                    <Text style={styles.distanceText}>{hospital.distance} {t('patient.km')}</Text>
                   </View>
-                  <Text style={styles.bedsText}>{hospital.beds} beds available</Text>
+                  <Text style={styles.bedsText}>{hospital.beds} {t('patient.bedsAvailable')}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -550,29 +512,28 @@ const PatientDashboard = ({ navigation }) => {
         {/* Available Doctors */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Available Doctors</Text>
+            <Text style={styles.sectionTitle}>{t('patient.availableDoctors')}</Text>
             <TouchableOpacity
               onPress={() => navigation.navigate('DoctorPatients')}
               accessibilityLabel="View all doctors"
               accessibilityRole="button"
             >
-              <Text style={styles.seeAll}>View All</Text>
+              <Text style={styles.seeAll}>{t('patient.viewAll')}</Text>
             </TouchableOpacity>
           </View>
           
           {doctors.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="doctor" size={48} color="#334155" />
-              <Text style={styles.emptyStateText}>No doctors found</Text>
+              <Text style={styles.emptyStateText}>{t('patient.noDoctorsFound')}</Text>
               <TouchableOpacity
                 style={styles.resetButton}
                 onPress={() => {
-                  setSearchQuery('');
                   setSelectedCategory('all');
                   setDoctors(MOCK_DOCTORS);
                 }}
               >
-                <Text style={styles.resetButtonText}>Reset Filters</Text>
+                <Text style={styles.resetButtonText}>{t('patient.resetFilters')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -601,12 +562,12 @@ const PatientDashboard = ({ navigation }) => {
           </View>
           <View style={styles.ambulanceInfo}>
             <View style={styles.ambulanceHeader}>
-              <Text style={styles.ambulanceTitle}>Nearby Ambulance</Text>
+              <Text style={styles.ambulanceTitle}>{t('patient.nearbyAmbulance')}</Text>
               <View style={styles.liveBadge}>
                 <Text style={styles.liveText}>LIVE</Text>
               </View>
             </View>
-            <Text style={styles.ambulanceSubtitle}>Unit #204 is 4 mins away</Text>
+            <Text style={styles.ambulanceSubtitle}>Unit #204 {t('patient.ambulanceAway')}</Text>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: '75%' }]} />
             </View>
@@ -622,7 +583,7 @@ const PatientDashboard = ({ navigation }) => {
             <View style={styles.quickActionIcon}>
               <MaterialCommunityIcons name="pill" size={24} color="#1963eb" />
             </View>
-            <Text style={styles.quickActionText}>Medicine Suggestions</Text>
+            <Text style={styles.quickActionText}>{t('patient.medicineSuggestions')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -632,7 +593,7 @@ const PatientDashboard = ({ navigation }) => {
             <View style={styles.quickActionIcon}>
               <MaterialCommunityIcons name="camera" size={24} color="#1963eb" />
             </View>
-            <Text style={styles.quickActionText}>Scan Medicine</Text>
+            <Text style={styles.quickActionText}>{t('patient.scanMedicine')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -655,7 +616,7 @@ const PatientDashboard = ({ navigation }) => {
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Payment Method</Text>
+              <Text style={styles.modalTitle}>{t('patient.paymentMethod')}</Text>
               <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
                 <MaterialCommunityIcons name="close" size={24} color="#fff" />
               </TouchableOpacity>
@@ -663,46 +624,46 @@ const PatientDashboard = ({ navigation }) => {
             
             {selectedDoctor && (
               <View style={styles.appointmentSummary}>
-                <Text style={styles.summaryLabel}>Booking with</Text>
+                <Text style={styles.summaryLabel}>{t('patient.bookingWith')}</Text>
                 <Text style={styles.summaryValue}>{selectedDoctor.name}</Text>
-                <Text style={styles.summaryLabel}>Consultation Fee</Text>
+                <Text style={styles.summaryLabel}>{t('patient.consultationFee')}</Text>
                 <Text style={styles.summaryPrice}>${selectedDoctor.consultationFee}</Text>
               </View>
             )}
 
             <TouchableOpacity
               style={styles.paymentOption}
-              onPress={() => handlePayment('Credit Card')}
+              onPress={() => handlePayment(t('patient.creditDebitCard'))}
             >
               <MaterialCommunityIcons name="credit-card" size={24} color="#1963eb" />
-              <Text style={styles.paymentOptionText}>Credit/Debit Card</Text>
+              <Text style={styles.paymentOptionText}>{t('patient.creditDebitCard')}</Text>
               <MaterialCommunityIcons name="chevron-right" size={24} color="#94a3b8" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.paymentOption}
-              onPress={() => handlePayment('Digital Wallet')}
+              onPress={() => handlePayment(t('patient.digitalWallet'))}
             >
               <MaterialCommunityIcons name="wallet" size={24} color="#1963eb" />
-              <Text style={styles.paymentOptionText}>Digital Wallet</Text>
+              <Text style={styles.paymentOptionText}>{t('patient.digitalWallet')}</Text>
               <MaterialCommunityIcons name="chevron-right" size={24} color="#94a3b8" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.paymentOption}
-              onPress={() => handlePayment('Insurance')}
+              onPress={() => handlePayment(t('patient.insurance'))}
             >
               <MaterialCommunityIcons name="shield-check" size={24} color="#1963eb" />
-              <Text style={styles.paymentOptionText}>Insurance</Text>
+              <Text style={styles.paymentOptionText}>{t('patient.insurance')}</Text>
               <MaterialCommunityIcons name="chevron-right" size={24} color="#94a3b8" />
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.paymentOption}
-              onPress={() => handlePayment('Pay at Hospital')}
+              onPress={() => handlePayment(t('patient.payAtHospital'))}
             >
               <MaterialCommunityIcons name="cash" size={24} color="#1963eb" />
-              <Text style={styles.paymentOptionText}>Pay at Hospital</Text>
+              <Text style={styles.paymentOptionText}>{t('patient.payAtHospital')}</Text>
               <MaterialCommunityIcons name="chevron-right" size={24} color="#94a3b8" />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -727,7 +688,7 @@ const PatientDashboard = ({ navigation }) => {
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Medicine Suggestions</Text>
+              <Text style={styles.modalTitle}>{t('patient.medicineSuggestions')}</Text>
               <TouchableOpacity onPress={() => setShowMedicineModal(false)}>
                 <MaterialCommunityIcons name="close" size={24} color="#fff" />
               </TouchableOpacity>
@@ -796,13 +757,13 @@ const PatientDashboard = ({ navigation }) => {
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Search Radius</Text>
+              <Text style={styles.modalTitle}>{t('patient.searchRadius')}</Text>
               <TouchableOpacity onPress={() => setShowRadiusModal(false)}>
                 <MaterialCommunityIcons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
             
-            <Text style={styles.modalSubtitle}>Select distance to search hospitals</Text>
+            <Text style={styles.modalSubtitle}>{t('patient.selectDistanceToSearch')}</Text>
             
             {[1, 2, 5, 10, 20].map((radius) => (
               <TouchableOpacity
@@ -919,6 +880,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   avatar: {
     width: 40,

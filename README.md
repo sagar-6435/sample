@@ -27,8 +27,7 @@ A comprehensive healthcare mobile application for emergency medical services, do
 ```
 lifelink/
 ├── mobile/          # React Native mobile app (Expo)
-├── backend/         # Node.js/Express API server
-└── docker-compose.yml
+└── backend/         # Node.js/Express API server
 ```
 
 ## ✨ Features
@@ -182,15 +181,7 @@ Then:
 - Press `i` for iOS
 - Scan QR code with Expo Go app
 
-## 🐳 Docker Deployment
 
-```bash
-docker-compose up -d
-```
-
-Services:
-- MongoDB: `localhost:27017`
-- Backend API: `http://localhost:3000`
 
 ## 🤝 Contributing
 
