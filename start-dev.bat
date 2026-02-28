@@ -28,6 +28,16 @@ if not exist node_modules (
 start "Backend API" cmd /k npm run dev
 cd ..
 
+REM Start Web Client
+echo Starting Web Client...
+cd client
+if not exist node_modules (
+    echo Installing web client dependencies...
+    call npm install
+)
+start "Web Client" cmd /k npm run dev
+cd ..
+
 REM Start Mobile App
 echo Starting Mobile App...
 cd mobile
@@ -43,6 +53,7 @@ echo All services started!
 echo.
 echo ML Service:    http://localhost:8000
 echo Backend API:   http://localhost:3000
+echo Web Client:    http://localhost:5173
 echo Mobile App:    Check Expo DevTools
 echo.
 echo Close the terminal windows to stop services
